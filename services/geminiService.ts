@@ -8,11 +8,13 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
   items: ExpenseItem[];
   date?: string;
 } | null> => {
-  // Intentamos obtener la clave de todas las fuentes posibles
-  const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
+  // Intentamos obtener la clave de la forma más directa posible
+  // @ts-ignore
+  const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) || 
+                 (window as any).process?.env?.API_KEY;
 
-  if (!apiKey || apiKey === "") {
-    throw new Error("API_KEY no detectada. Revisa las variables de entorno en Vercel y asegúrate de que el despliegue haya terminado con éxito.");
+  if (!apiKey) {
+    throw new Error("API_KEY no detectada. Por favor, asegúrate de configurar la variable de entorno API_KEY en Vercel.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -30,7 +32,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
               },
             },
             {
-              text: "Analiza este ticket. Extrae: 1. Nombre de la tienda. 2. Total (número). 3. Lista de productos (nombre, precio, cantidad). Responde SOLO en JSON válido.",
+              text: "Analiza este ticket de compra. Extrae: 1. Nombre de la tienda. 2. Total pagado (número). 3. Lista de productos (nombre, precio unitario, cantidad). Responde estrictamente en JSON.",
             },
           ],
         },
@@ -67,8 +69,8 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
   } catch (error: any) {
     console.error("Error Gemini:", error);
     if (error.message?.includes('403') || error.message?.includes('API key')) {
-      throw new Error("Error de autenticación: La API Key no es válida.");
+      throw new Error("Error de API Key: La clave configurada no parece ser válida o no tiene permisos.");
     }
-    throw new Error(`Error de la IA: ${error.message || 'Sin respuesta'}`);
+    throw new Error(`Error de la IA: ${error.message || 'Error al procesar la imagen'}`);
   }
 };
