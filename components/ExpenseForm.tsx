@@ -13,51 +13,33 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState<number>(0);
   const [payer, setPayer] = useState<Payer>(Payer.USER);
-  const [isScanning, setIsScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState<'idle' | 'compressing' | 'analyzing'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Función para comprimir la imagen antes de enviarla
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
+      reader.onload = (e) => {
         const img = new Image();
-        img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1024; // Redimensionamos a un tamaño razonable para IA
-          const scaleSize = MAX_WIDTH / img.width;
+          const MAX_WIDTH = 1024;
+          const scale = MAX_WIDTH / img.width;
           canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scaleSize;
-
+          canvas.height = img.height * scale;
           const ctx = canvas.getContext('2d');
-          if (!ctx) return reject('No se pudo crear el contexto del canvas');
+          if (!ctx) return reject(new Error('Canvas context error'));
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          // Exportamos como JPEG con calidad media para ahorrar datos
           const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
           resolve(base64);
         };
-        img.onerror = reject;
+        img.onerror = () => reject(new Error('Error al cargar imagen. Intenta otra foto.'));
+        img.src = e.target?.result as string;
       };
-      reader.onerror = reject;
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!description || amount <= 0) return;
-    
-    onAdd({
-      date: new Date().toISOString(),
-      description,
-      amount,
-      category: 'Comida',
-      payer,
-      items: items.length > 0 ? items : undefined
+      reader.onerror = () => reject(new Error('Error al leer el archivo del móvil.'));
+      reader.readAsDataURL(file);
     });
   };
 
@@ -65,32 +47,32 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsScanning(true);
     setError(null);
+    setScanStatus('compressing');
 
     try {
       const compressedBase64 = await compressImage(file);
+      setScanStatus('analyzing');
+      
       const result = await analyzeReceipt(compressedBase64);
       
       if (result) {
-        setDescription(result.storeName || 'Compra Supermercado');
+        setDescription(result.storeName || 'Compra General');
         setAmount(result.total || 0);
         setItems(result.items || []);
-        // Pequeño feedback visual de éxito
-        const successAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
-        successAudio.volume = 0.2;
-        successAudio.play().catch(() => {});
       } else {
-        setError("No pudimos leer el ticket. Intenta escribir los datos manualmente o toma otra foto con mejor luz.");
+        setError("La IA no pudo procesar la imagen. Asegúrate de que el ticket se vea claro.");
       }
-    } catch (err) {
-      console.error("Error al procesar:", err);
-      setError("Error de conexión o de cámara. Revisa tu internet.");
+    } catch (err: any) {
+      console.error("Error en escaneo:", err);
+      setError(err.message || "Error al conectar con el servicio de IA.");
     } finally {
-      setIsScanning(false);
+      setScanStatus('idle');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
+  const isScanning = scanStatus !== 'idle';
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm animate-slideUp">
@@ -102,59 +84,69 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-xl text-xs font-medium flex items-center gap-2 animate-fadeIn">
-          <i className="fas fa-exclamation-circle"></i>
-          {error}
+        <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-xl text-xs font-medium flex items-start gap-2 border border-red-100">
+          <i className="fas fa-exclamation-circle mt-0.5"></i>
+          <span>{error}</span>
         </div>
       )}
 
       {!isScanning && (
         <button 
           onClick={() => fileInputRef.current?.click()}
-          className="w-full mb-6 border-2 border-dashed border-emerald-200 bg-emerald-50 text-emerald-700 py-6 rounded-xl font-bold flex flex-col items-center gap-2 hover:bg-emerald-100 transition-colors active:scale-95"
+          className="w-full mb-6 border-2 border-dashed border-emerald-200 bg-emerald-50 text-emerald-700 py-10 rounded-xl font-bold flex flex-col items-center gap-2 hover:bg-emerald-100 active:scale-95 transition-all"
         >
-          <i className="fas fa-camera text-3xl"></i>
-          <span className="text-sm">Escanear Ticket con IA</span>
-          <p className="text-[10px] font-normal text-emerald-600/70">Identifica productos y total automáticamente</p>
+          <i className="fas fa-camera text-4xl mb-1"></i>
+          <span className="text-sm">Tomar Foto del Ticket</span>
+          <p className="text-[10px] font-normal opacity-70">Detecta productos y totales automáticamente</p>
           <input 
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileUpload} 
             className="hidden" 
-            accept="image/*" 
-            capture="environment"
+            accept="image/*"
           />
         </button>
       )}
 
       {isScanning && (
-        <div className="w-full mb-6 bg-slate-50 py-10 rounded-xl flex flex-col items-center gap-4 animate-pulse">
+        <div className="w-full mb-6 bg-slate-50 py-12 rounded-xl flex flex-col items-center gap-4 animate-pulse border-2 border-emerald-100">
           <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
           <div className="text-center">
-            <p className="text-sm font-bold text-slate-700">Analizando con IA...</p>
-            <p className="text-[10px] text-slate-400 mt-1">Extrayendo precios y productos</p>
+            <p className="text-sm font-bold text-slate-700">
+              {scanStatus === 'compressing' ? 'Preparando foto...' : 'La IA está leyendo el ticket...'}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-1">Por favor, no cierres la app</p>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        onAdd({
+          date: new Date().toISOString(),
+          description,
+          amount,
+          category: 'Varios',
+          payer,
+          items: items.length > 0 ? items : undefined
+        });
+      }} className="space-y-5">
         <div>
           <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">¿Quién pagó?</label>
           <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setPayer(Payer.USER)}
-              className={`py-3 rounded-xl font-bold transition-all truncate px-2 border-2 ${payer === Payer.USER ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-100' : 'bg-slate-50 text-slate-400 border-transparent'}`}
-            >
-              {settings.userName}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPayer(Payer.PARTNER)}
-              className={`py-3 rounded-xl font-bold transition-all truncate px-2 border-2 ${payer === Payer.PARTNER ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-100' : 'bg-slate-50 text-slate-400 border-transparent'}`}
-            >
-              {settings.partnerName}
-            </button>
+            {[
+              { id: Payer.USER, name: settings.userName },
+              { id: Payer.PARTNER, name: settings.partnerName }
+            ].map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPayer(p.id)}
+                className={`py-3 rounded-xl font-bold transition-all border-2 ${payer === p.id ? 'bg-emerald-500 text-white border-emerald-500 shadow-md' : 'bg-slate-50 text-slate-400 border-transparent'}`}
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -164,47 +156,32 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ej: Mercadona, Cena Italiana..."
-            className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+            placeholder="Ej: Carrefour, Cena..."
+            className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500"
             required
           />
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Monto Total</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Total</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
             <input
               type="number"
               step="0.01"
-              inputMode="decimal"
-              value={amount === 0 ? '' : amount}
+              value={amount || ''}
               onChange={(e) => setAmount(Number(e.target.value))}
               placeholder="0.00"
-              className="w-full bg-slate-50 border-none rounded-xl pl-8 pr-4 py-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-bold text-2xl"
+              className="w-full bg-slate-50 border-none rounded-xl pl-8 pr-4 py-4 text-slate-800 font-bold text-2xl focus:ring-2 focus:ring-emerald-500"
               required
             />
           </div>
         </div>
 
-        {items.length > 0 && (
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-             <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">Productos detectados</p>
-             <div className="max-h-32 overflow-y-auto space-y-1">
-                {items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between text-[10px] text-slate-600">
-                    <span className="truncate flex-1"> {item.quantity || 1}x {item.name}</span>
-                    <span className="font-bold ml-2">${item.price}</span>
-                  </div>
-                ))}
-             </div>
-          </div>
-        )}
-
         <button
           type="submit"
           disabled={isScanning}
-          className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all mt-4 active:scale-95 ${isScanning ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-emerald-100'}`}
+          className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all ${isScanning ? 'bg-slate-300' : 'bg-emerald-500 text-white shadow-emerald-100 active:scale-95'}`}
         >
           {isScanning ? 'Procesando...' : 'Registrar Gasto'}
         </button>

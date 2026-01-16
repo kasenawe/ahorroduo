@@ -8,11 +8,11 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
   items: ExpenseItem[];
   date?: string;
 } | null> => {
-  const apiKey = process.env.API_KEY;
+  // Intentamos obtener la clave de todas las fuentes posibles
+  const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
 
   if (!apiKey || apiKey === "") {
-    console.error("CRÍTICO: La API_KEY no está configurada en el entorno.");
-    return null;
+    throw new Error("API_KEY no detectada. Revisa las variables de entorno en Vercel y asegúrate de que el despliegue haya terminado con éxito.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -30,7 +30,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
               },
             },
             {
-              text: "Act as a receipt scanner. Extract: 1. Store/Merchant name. 2. Total amount (as number). 3. List of items (name, price, quantity). If you can't find a store name, use 'Compra General'. Return ONLY valid JSON.",
+              text: "Analiza este ticket. Extrae: 1. Nombre de la tienda. 2. Total (número). 3. Lista de productos (nombre, precio, cantidad). Responde SOLO en JSON válido.",
             },
           ],
         },
@@ -42,7 +42,6 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
           properties: {
             storeName: { type: Type.STRING },
             total: { type: Type.NUMBER },
-            date: { type: Type.STRING },
             items: {
               type: Type.ARRAY,
               items: {
@@ -62,13 +61,14 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
     });
 
     if (response.text) {
-      const data = JSON.parse(response.text.trim());
-      console.log("IA Analysis Success:", data);
-      return data;
+      return JSON.parse(response.text.trim());
     }
     return null;
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return null;
+  } catch (error: any) {
+    console.error("Error Gemini:", error);
+    if (error.message?.includes('403') || error.message?.includes('API key')) {
+      throw new Error("Error de autenticación: La API Key no es válida.");
+    }
+    throw new Error(`Error de la IA: ${error.message || 'Sin respuesta'}`);
   }
 };
