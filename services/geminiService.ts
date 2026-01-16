@@ -2,14 +2,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ExpenseItem } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-
 export const analyzeReceipt = async (base64Image: string): Promise<{
   storeName: string;
   total: number;
   items: ExpenseItem[];
   date?: string;
 } | null> => {
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey || apiKey === "") {
+    alert("¡Atención! No se ha configurado la API_KEY en Vercel. Ve a Settings -> Environment Variables y añade API_KEY.");
+    return null;
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -60,6 +67,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
     return null;
   } catch (error) {
     console.error("Error analyzing receipt:", error);
+    alert("Hubo un error al leer el ticket. Revisa tu conexión o la API Key.");
     return null;
   }
 };
