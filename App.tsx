@@ -17,9 +17,7 @@ const getCurrentMonthStr = () => {
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
     const currentMonth = getCurrentMonthStr();
-    
     const defaultState: AppState = {
       summaries: [
         {
@@ -38,20 +36,24 @@ const App: React.FC = () => {
       }
     };
 
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.settings) parsed.settings = defaultState.settings;
-        return parsed;
-      } catch (e) {
-        console.error("Error loading state", e);
+        if (parsed && parsed.settings) return parsed;
       }
+    } catch (e) {
+      console.warn("LocalStorage no disponible:", e);
     }
     return defaultState;
   });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn("No se pudo guardar en LocalStorage:", e);
+    }
   }, [state]);
 
   const currentSummary = state.summaries.find(s => s.month === state.currentMonth && !s.isClosed) 
@@ -90,7 +92,6 @@ const App: React.FC = () => {
   const handleImportState = (newState: AppState) => {
     setState(newState);
     setActiveTab('dashboard');
-    alert('¡Datos sincronizados con éxito!');
   };
 
   const handleCloseMonth = () => {
