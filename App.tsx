@@ -40,7 +40,10 @@ const App: React.FC = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.settings) return parsed;
+        // Validación básica para evitar Error #31 (renderizar objetos por error)
+        if (parsed && typeof parsed.settings?.userName === 'string') {
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn("LocalStorage no disponible:", e);
@@ -57,7 +60,8 @@ const App: React.FC = () => {
   }, [state]);
 
   const currentSummary = state.summaries.find(s => s.month === state.currentMonth && !s.isClosed) 
-    || state.summaries[0];
+    || state.summaries[0] 
+    || { month: getCurrentMonthStr(), totalSpent: 0, userSpent: 0, partnerSpent: 0, isClosed: false, expenses: [] };
 
   const handleAddExpense = (newExpenseData: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
@@ -72,9 +76,9 @@ const App: React.FC = () => {
           return {
             ...s,
             expenses: updatedExpenses,
-            totalSpent: updatedExpenses.reduce((acc, e) => acc + e.amount, 0),
-            userSpent: updatedExpenses.filter(e => e.payer === Payer.USER).reduce((acc, e) => acc + e.amount, 0),
-            partnerSpent: updatedExpenses.filter(e => e.payer === Payer.PARTNER).reduce((acc, e) => acc + e.amount, 0)
+            totalSpent: updatedExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0),
+            userSpent: updatedExpenses.filter(e => e.payer === Payer.USER).reduce((acc, e) => acc + (Number(e.amount) || 0), 0),
+            partnerSpent: updatedExpenses.filter(e => e.payer === Payer.PARTNER).reduce((acc, e) => acc + (Number(e.amount) || 0), 0)
           };
         }
         return s;
