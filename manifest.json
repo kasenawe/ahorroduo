@@ -1,0 +1,17 @@
+
+{
+  "short_name": "AhorroDuo",
+  "name": "AhorroDuo - Finanzas en Pareja",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/10170/10170190.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#10b981",
+  "background_color": "#f8fafc"
+}

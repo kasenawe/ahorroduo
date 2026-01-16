@@ -1,0 +1,7 @@
+{
+  "name": "AhorroDuo",
+  "description": "Una aplicación elegante para que parejas gestionen sus gastos compartidos, escaneen recibos con IA y visualicen sus finanzas mensuales de forma sencilla.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
