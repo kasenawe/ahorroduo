@@ -11,7 +11,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "") {
-    console.warn("API_KEY no configurada");
+    console.error("CRÍTICO: La API_KEY no está configurada en el entorno.");
     return null;
   }
 
@@ -30,7 +30,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
               },
             },
             {
-              text: "Extract info from receipt: store name, total amount, and list of items. Return ONLY JSON.",
+              text: "Act as a receipt scanner. Extract: 1. Store/Merchant name. 2. Total amount (as number). 3. List of items (name, price, quantity). If you can't find a store name, use 'Compra General'. Return ONLY valid JSON.",
             },
           ],
         },
@@ -62,11 +62,13 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
     });
 
     if (response.text) {
-      return JSON.parse(response.text.trim());
+      const data = JSON.parse(response.text.trim());
+      console.log("IA Analysis Success:", data);
+      return data;
     }
     return null;
   } catch (error) {
-    console.error("Error analyzing receipt:", error);
+    console.error("Gemini API Error:", error);
     return null;
   }
 };
