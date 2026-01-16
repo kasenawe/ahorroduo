@@ -38,4 +38,5 @@ export interface AppState {
   summaries: MonthlySummary[];
   currentMonth: string; // YYYY-MM
   settings: Settings;
+  lastSync?: string; // ISO Date string
 }

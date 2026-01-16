@@ -38,13 +38,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, fullData, onSave, onImpor
         await navigator.share({
           files: [file],
           title: 'Sincronización AhorroDuo',
-          text: 'Te envío mis últimos gastos actualizados.'
+          text: `Mis gastos de AhorroDuo al día ${new Date().toLocaleDateString()}`
         });
       } catch (error) {
         console.error('Error compartiendo:', error);
       }
     } else {
-      alert('Tu navegador no permite compartir archivos directamente. Usa el botón de "Exportar Archivo".');
+      handleExport();
     }
   };
 
@@ -61,8 +61,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, fullData, onSave, onImpor
       try {
         const json = JSON.parse(event.target?.result as string);
         if (json.summaries && json.settings) {
-          if (window.confirm('¿Importar datos? Esto reemplazará tu historial actual con el que has recibido.')) {
-            onImport(json);
+          if (window.confirm('¿Importar datos? Esto unificará tu historial con el de tu pareja.')) {
+            onImport({ ...json, lastSync: new Date().toISOString() });
           }
         } else {
           alert('El archivo no parece ser válido.');
@@ -75,72 +75,79 @@ const Settings: React.FC<SettingsProps> = ({ settings, fullData, onSave, onImpor
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn pb-10">
       <h2 className="text-2xl font-bold text-slate-800 px-1">Configuración</h2>
       
       {/* Nombres */}
       <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-6">
         <h3 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2">
           <i className="fas fa-user-friends text-emerald-500"></i>
-          Nombres en la App
+          Perfiles
         </h3>
         
         <div className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Tu Nombre</label>
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
-            />
+          <div className="flex gap-3">
+            <div className="flex-1">
+               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Tú</label>
+               <input
+                type="text"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+              />
+            </div>
+            <div className="flex-1">
+               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Pareja</label>
+               <input
+                type="text"
+                value={partnerName}
+                onChange={(e) => setPartnerName(e.target.value)}
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+              />
+            </div>
           </div>
-
-          <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Tu Pareja</label>
-            <input
-              type="text"
-              value={partnerName}
-              onChange={(e) => setPartnerName(e.target.value)}
-              className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
-            />
-          </div>
+          <button
+            onClick={handleSave}
+            className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition-colors"
+          >
+            Guardar Nombres
+          </button>
         </div>
-
-        <button
-          onClick={handleSave}
-          className="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-slate-900 transition-colors"
-        >
-          Actualizar Nombres
-        </button>
       </div>
 
-      {/* Sincronización con Pareja */}
+      {/* Sincronización Manual */}
       <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-        <h3 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2">
-          <i className="fas fa-sync text-emerald-500"></i>
-          Sincronizar con pareja
-        </h3>
+        <div className="flex justify-between items-start">
+          <h3 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2">
+            <i className="fas fa-sync text-emerald-500"></i>
+            Sincronización
+          </h3>
+          {fullData.lastSync && (
+            <span className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full font-bold">
+              Última: {new Date(fullData.lastSync).toLocaleDateString()}
+            </span>
+          )}
+        </div>
         
         <p className="text-xs text-slate-500 leading-relaxed">
-          Para unir vuestros gastos, envíale tus datos por WhatsApp y ella deberá "Cargar" el archivo que reciba.
+          Usa estos botones para mantener vuestros gastos unidos. Uno envía y el otro carga.
         </p>
 
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={handleShare}
-            className="flex flex-col items-center gap-2 bg-emerald-500 text-white p-4 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-md"
+            className="flex flex-col items-center gap-2 bg-emerald-500 text-white p-4 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-md active:scale-95"
           >
-            <i className="fab fa-whatsapp text-xl"></i>
-            <span className="text-xs">Enviar Datos</span>
+            <i className="fab fa-whatsapp text-2xl"></i>
+            <span className="text-xs">Enviar mis datos</span>
           </button>
           
           <button
             onClick={handleImportClick}
-            className="flex flex-col items-center gap-2 bg-slate-800 text-white p-4 rounded-xl font-bold hover:bg-slate-900 transition-colors shadow-md"
+            className="flex flex-col items-center gap-2 bg-slate-800 text-white p-4 rounded-xl font-bold hover:bg-slate-900 transition-colors shadow-md active:scale-95"
           >
-            <i className="fas fa-file-import text-xl"></i>
-            <span className="text-xs">Cargar Datos</span>
+            <i className="fas fa-cloud-download-alt text-2xl"></i>
+            <span className="text-xs">Cargar de pareja</span>
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -152,17 +159,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, fullData, onSave, onImpor
         </div>
       </div>
 
-      <div className="bg-slate-100 rounded-2xl p-4 flex items-center justify-between">
-        <span className="text-[10px] font-bold text-slate-400 uppercase">Copia de Seguridad</span>
-        <button onClick={handleExport} className="text-emerald-600 font-bold text-xs">Descargar JSON</button>
-      </div>
-
-      <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100 mb-8">
+      <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100 mb-8">
         <div className="flex gap-3">
-          <i className="fas fa-info-circle text-blue-500 mt-1"></i>
-          <p className="text-[11px] text-blue-700 leading-relaxed">
-            Al no usar una base de datos centralizada, vuestra privacidad es total. Los datos solo se mueven cuando tú decides compartirlos.
-          </p>
+          <i className="fas fa-shield-alt text-blue-500 mt-1"></i>
+          <div>
+            <p className="text-[11px] font-bold text-blue-800 mb-1">Privacidad Total</p>
+            <p className="text-[10px] text-blue-700 leading-tight">
+              Tus finanzas no se guardan en ningún servidor externo. Solo tú controlas quién ve tus datos compartiendo el archivo.
+            </p>
+          </div>
         </div>
       </div>
     </div>

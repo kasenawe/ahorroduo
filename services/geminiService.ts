@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { ExpenseItem } from "../types";
+import { ExpenseItem } from "../types.ts";
 
 export const analyzeReceipt = async (base64Image: string): Promise<{
   storeName: string;
@@ -11,7 +11,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "") {
-    alert("¡Atención! No se ha configurado la API_KEY en Vercel. Ve a Settings -> Environment Variables y añade API_KEY.");
+    console.warn("API_KEY no configurada");
     return null;
   }
 
@@ -30,7 +30,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
               },
             },
             {
-              text: "Extract information from this receipt. Return ONLY JSON. If data is not found, use null or 0. Focus on store name, total amount, and a list of items with price and quantity.",
+              text: "Extract info from receipt: store name, total amount, and list of items. Return ONLY JSON.",
             },
           ],
         },
@@ -67,7 +67,6 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
     return null;
   } catch (error) {
     console.error("Error analyzing receipt:", error);
-    alert("Hubo un error al leer el ticket. Revisa tu conexión o la API Key.");
     return null;
   }
 };

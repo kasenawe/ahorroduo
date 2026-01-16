@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { Payer, Expense, Settings } from '../types';
-import { analyzeReceipt } from '../services/geminiService';
+import { Payer, Expense, Settings } from '../types.ts';
+import { analyzeReceipt } from '../services/geminiService.ts';
 
 interface ExpenseFormProps {
   onAdd: (expense: Omit<Expense, 'id'>) => void;
@@ -55,7 +55,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm animate-slideUp">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-slate-800">Nuevo Gasto</h2>
-        <button onClick={onCancel} className="text-slate-400 hover:text-slate-600">
+        <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 p-2">
           <i className="fas fa-times"></i>
         </button>
       </div>
@@ -63,7 +63,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
       {!isScanning && (
         <button 
           onClick={() => fileInputRef.current?.click()}
-          className="w-full mb-6 border-2 border-dashed border-emerald-200 bg-emerald-50 text-emerald-700 py-4 rounded-xl font-bold flex flex-col items-center gap-2 hover:bg-emerald-100 transition-colors"
+          className="w-full mb-6 border-2 border-dashed border-emerald-200 bg-emerald-50 text-emerald-700 py-4 rounded-xl font-bold flex flex-col items-center gap-2 hover:bg-emerald-100 transition-colors active:scale-95"
         >
           <i className="fas fa-camera text-2xl"></i>
           <span>Escanear Ticket con IA</span>
@@ -87,7 +87,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">¿Quién pagó?</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">¿Quién pagó?</label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -107,45 +107,32 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAdd, onCancel, settings }) 
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Descripción</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Descripción</label>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ej: Mercadona, Cena, Frutería..."
-            className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+            placeholder="Ej: Compra mensual, Pizza..."
+            className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
             required
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Monto Total</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Monto Total</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
             <input
               type="number"
+              step="0.01"
               value={amount === 0 ? '' : amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               placeholder="0.00"
-              className="w-full bg-slate-50 border-none rounded-xl pl-8 pr-4 py-4 text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500 transition-all font-bold text-2xl"
+              className="w-full bg-slate-50 border-none rounded-xl pl-8 pr-4 py-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 transition-all font-bold text-2xl"
               required
             />
           </div>
         </div>
-
-        {items.length > 0 && (
-          <div className="bg-slate-50 p-4 rounded-xl">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-3">Artículos Detectados ({items.length})</h4>
-            <div className="max-h-32 overflow-y-auto space-y-2">
-              {items.map((item, idx) => (
-                <div key={idx} className="flex justify-between text-xs">
-                  <span className="text-slate-600 truncate mr-2">{item.name}</span>
-                  <span className="font-bold text-slate-800">${item.price}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <button
           type="submit"

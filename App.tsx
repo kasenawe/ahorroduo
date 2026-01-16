@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import History from './components/History';
-import ExpenseForm from './components/ExpenseForm';
-import Settings from './components/Settings';
-import { AppState, MonthlySummary, Expense, Payer, Settings as SettingsType } from './types';
+import Layout from './components/Layout.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import History from './components/History.tsx';
+import ExpenseForm from './components/ExpenseForm.tsx';
+import Settings from './components/Settings.tsx';
+import { AppState, MonthlySummary, Expense, Payer, Settings as SettingsType } from './types.ts';
 
 const STORAGE_KEY = 'ahorro_duo_data_v1';
 
@@ -41,7 +41,6 @@ const App: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Ensure settings exist for legacy data
         if (!parsed.settings) parsed.settings = defaultState.settings;
         return parsed;
       } catch (e) {
@@ -51,7 +50,6 @@ const App: React.FC = () => {
     return defaultState;
   });
 
-  // Persist state to local storage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
@@ -92,11 +90,11 @@ const App: React.FC = () => {
   const handleImportState = (newState: AppState) => {
     setState(newState);
     setActiveTab('dashboard');
-    alert('¡Copia de seguridad restaurada con éxito!');
+    alert('¡Datos sincronizados con éxito!');
   };
 
   const handleCloseMonth = () => {
-    if (window.confirm('¿Estás seguro de cerrar el mes? Esto reseteará los balances para el próximo periodo.')) {
+    if (window.confirm('¿Estás seguro de cerrar el mes?')) {
       setState(prev => {
         const updatedSummaries = prev.summaries.map(s => {
           if (s.month === prev.currentMonth) return { ...s, isClosed: true };

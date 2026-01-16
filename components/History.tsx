@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
-import { MonthlySummary } from '../types';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { MonthlySummary } from '../types.ts';
 
 interface HistoryProps {
   summaries: MonthlySummary[];
@@ -18,7 +18,7 @@ const History: React.FC<HistoryProps> = ({ summaries }) => {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <h2 className="text-2xl font-bold text-slate-800 px-1">Historial de Meses</h2>
+      <h2 className="text-2xl font-bold text-slate-800 px-1">Historial</h2>
 
       {summaries.length === 0 ? (
          <div className="bg-white rounded-2xl p-10 text-center border-2 border-dashed border-slate-200">
@@ -27,11 +27,11 @@ const History: React.FC<HistoryProps> = ({ summaries }) => {
       ) : (
         <>
           <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm h-64">
-            <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">Gasto Total por Mes</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest">Gasto Total por Mes</h3>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
                 <YAxis hide />
                 <Tooltip 
                   cursor={{fill: '#f8fafc'}}
@@ -47,20 +47,20 @@ const History: React.FC<HistoryProps> = ({ summaries }) => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-slate-800 font-bold px-1">Resúmenes Anteriores</h3>
+            <h3 className="text-slate-800 font-bold px-1 text-sm uppercase tracking-tight">Meses Anteriores</h3>
             {summaries.map((s) => (
               <div key={s.month} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex justify-between items-center">
                 <div>
                   <h4 className="font-bold text-slate-800 capitalize">
                     {new Date(s.month + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                   </h4>
-                  <p className="text-xs text-slate-400 font-medium">
-                    {s.expenses.length} gastos registrados
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">
+                    {s.expenses.length} gastos
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-emerald-600">${s.totalSpent.toLocaleString()}</p>
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Total Mes</p>
+                  <p className="text-[10px] uppercase font-bold text-slate-400 tracking-tighter">Total Mes</p>
                 </div>
               </div>
             ))}
