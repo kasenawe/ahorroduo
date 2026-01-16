@@ -8,13 +8,11 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
   items: ExpenseItem[];
   date?: string;
 } | null> => {
-  // Intentamos obtener la clave de la forma más directa posible
-  // @ts-ignore
-  const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) || 
-                 (window as any).process?.env?.API_KEY;
+  // Acceso directo según las directrices del SDK y la configuración de Vite
+  const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
-    throw new Error("API_KEY no detectada. Por favor, asegúrate de configurar la variable de entorno API_KEY en Vercel.");
+    throw new Error("API_KEY no detectada. Por favor, asegúrate de haber configurado la variable de entorno 'API_KEY' en la sección de Environment Variables en el panel de Vercel.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -69,7 +67,7 @@ export const analyzeReceipt = async (base64Image: string): Promise<{
   } catch (error: any) {
     console.error("Error Gemini:", error);
     if (error.message?.includes('403') || error.message?.includes('API key')) {
-      throw new Error("Error de API Key: La clave configurada no parece ser válida o no tiene permisos.");
+      throw new Error("Error de API Key: La clave configurada en Vercel no es válida o no tiene permisos.");
     }
     throw new Error(`Error de la IA: ${error.message || 'Error al procesar la imagen'}`);
   }
