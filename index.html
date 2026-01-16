@@ -9,7 +9,7 @@
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#10b981">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AhorroDuo">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10170/10170190.png">
@@ -22,28 +22,64 @@
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: contain;
+            background-color: #f8fafc;
         }
         .safe-bottom {
             padding-bottom: env(safe-area-inset-bottom);
         }
-        /* Fix for iOS momentum scrolling */
-        main {
-            -webkit-overflow-scrolling: touch;
+        #error-display {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 9999;
+            padding: 2rem;
+            color: #ef4444;
+            font-family: monospace;
+            overflow: auto;
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0"
-  }
-}
-</script>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "recharts": "https://esm.sh/recharts@^3.6.0",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.37.0"
+      }
+    }
+    </script>
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
+    
+    <!-- Pantalla de error de emergencia -->
+    <div id="error-display">
+        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">⚠️ Error de Carga</h1>
+        <p id="error-message"></p>
+        <button onclick="location.reload()" style="margin-top: 2rem; padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 8px;">Reintentar</button>
+    </div>
+
+    <script>
+        // Capturar errores antes de que React cargue
+        window.onerror = function(msg, url, line, col, error) {
+            document.getElementById('error-display').style.display = 'block';
+            document.getElementById('error-message').textContent = msg + '\nEn: ' + url + ':' + line;
+            return false;
+        };
+        
+        window.addEventListener('unhandledrejection', function(event) {
+            document.getElementById('error-display').style.display = 'block';
+            document.getElementById('error-message').textContent = 'Error en promesa: ' + event.reason;
+        });
+    </script>
+
+    <!-- Script de entrada explícito por si el automático falla en Vercel -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>
